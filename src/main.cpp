@@ -1,6 +1,6 @@
 #include "game.hpp"
 
-int main(int argc, char* argv[])
+int main()
 {
     Game game;
     game.Initialize();
@@ -9,9 +9,3 @@ int main(int argc, char* argv[])
     game.Destroy();
     return 0;
 }
-
-//STILL TODO
-//Create tilemap loader
-//Create animation system
-//Create sort by zidx
-//Camera system

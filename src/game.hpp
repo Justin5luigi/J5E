@@ -6,6 +6,10 @@
 #include "assetdatabase.hpp"
 #include <cstdint>
 #include "events/eventhandler.hpp"
+#include "logger.hpp"
+#include "ecs/elements.hpp"
+#include "ecs/systems.hpp"
+#include <sol/sol.hpp>
 
 class Game 
 {
@@ -23,6 +27,14 @@ class Game
         uint32_t prevTime, currTime;
         bool debugMode;
 
+        //getters
+        SDL_Window* GetGameWindow() const;
+        SDL_Renderer* GetGameRenderer() const;
+        std::unique_ptr<Universe>& GetGameUniverse();
+        std::unique_ptr<AssetDataBase>& GetGameAssetDB();
+        std::unique_ptr<EventHandler>& GetGameEventHandler();
+        
+
     private:
         SDL_Window *window;
         SDL_Renderer *renderer;
@@ -31,6 +43,8 @@ class Game
         std::unique_ptr<Universe> universe;
         std::unique_ptr<AssetDataBase> assetDB;
         std::unique_ptr<EventHandler> eventHandler;
+        sol::state lua;
+        void LoadAssets(std::string luaFile);
         
                 
 };

@@ -2,13 +2,10 @@
 #include <iostream>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
-#include "logger.hpp"
-#include "ecs/elements.hpp"
-#include "ecs/systems.hpp"
 
 Game::Game() 
 {
-    Logger::SetLogPath("./log");
+    Logger::SetLogPath("./logfile.txt");
     Logger::Log(LOG_INFO, "Game constructor initialized.");
     universe = std::make_unique<Universe>();
     assetDB = std::make_unique<AssetDataBase>();
@@ -52,7 +49,7 @@ void Game::Initialize()
     Logger::Log(LOG_INFO, "Game initialized.");
 }
 
-void Game::Setup()
+void Game::Setup() 
 {
     //Adding Systems
     universe->AddSystem<MovementSystem>();
@@ -61,22 +58,7 @@ void Game::Setup()
     universe->AddSystem<RenderCollisionSystem>();
     universe->AddSystem<KeyBoardControlSystem>();
     
-    //Adding assets
-    assetDB->AddTexture(renderer, "test", "./assets/tank-panther-right.png");
-
-    //Adding existents
-    Existent god = universe->CreateExistent();
-    Existent mortal = universe->CreateExistent();
-
-    //Adding elements
-    god.AddElement<TransformElement>(glm::vec2(10, 10), glm::vec2(1, 1), 0);
-    god.AddElement<RigidBodyElement>(glm::vec2(10, 0));
-    god.AddElement<SpriteElement>("test", 32, 32);
-    god.AddElement<ColliderElement>(glm::vec2(32, 32));
-    mortal.AddElement<TransformElement>(glm::vec2(100, 10), glm::vec2(1, 1), 0);
-    mortal.AddElement<RigidBodyElement>(glm::vec2(-1,0));
-    mortal.AddElement<SpriteElement>("test", 32, 32);
-    mortal.AddElement<ColliderElement>(glm::vec2(32, 32));
+    LoadAssets("./game.lua");
 
     //subscribing to events
     universe->GetSystem<KeyBoardControlSystem>().ListenToEvents(eventHandler);
@@ -152,4 +134,110 @@ void Game::Destroy()
     SDL_DestroyWindow(window);
     SDL_Quit();
     Logger::Close();
+}
+
+//setter functions 
+SDL_Window* Game::GetGameWindow() const { return window; }
+
+SDL_Renderer* Game::GetGameRenderer() const { return renderer; }
+
+std::unique_ptr<Universe>& Game::GetGameUniverse() { return universe; }
+        
+std::unique_ptr<AssetDataBase>& Game::GetGameAssetDB() { return assetDB; }
+        
+std::unique_ptr<EventHandler>& Game::GetGameEventHandler() { return eventHandler; }
+
+
+void Game::LoadAssets(std::string luaFile)
+{
+    lua.open_libraries(sol::lib::base);
+    sol::load_result script = lua.load_file(luaFile);
+    if (!script.valid())
+    {
+        Logger::Log(LOG_ERROR, sol::error(script).what());
+        return;
+    }
+
+    lua.script_file(luaFile);
+    sol::table assets = lua["Assets"];
+    bool stillArgsToParse = true;
+    int i = 0;
+    while (stillArgsToParse)
+    {
+        sol::optional<sol::table> isasset = assets[i];
+        if (isasset == sol::nullopt) { stillArgsToParse = false; }
+        else
+        {
+            sol::table asset = assets[i];
+            std::string assetType = asset["type"];
+            std::string assetID = asset["id"];
+            std::string filePath = asset["file"];
+            assetDB->AddTexture(renderer, assetID, filePath);
+            Logger::Log(LOG_INFO, "Successfully loaded texture from lua with id = " + assetID);
+            i++;
+        }
+    }
+
+    sol::table Existents = lua["Existents"];
+    stillArgsToParse = true;
+    i = 0;
+
+    while (stillArgsToParse)
+    {
+        sol::optional<sol::table> isExistent = Existents[i];
+        if (isExistent == sol::nullopt) { stillArgsToParse = false; }
+        else
+        {
+            sol::table existent = Existents[i];
+            Existent newExistent = universe->CreateExistent();
+            bool stillElementstoParse = true;
+            int j = 1;
+            sol::table Elements = existent["elements"];
+            while (stillElementstoParse)
+            {
+                sol::optional<sol::table> isElement = Elements[j];
+                if (isElement == sol::nullopt) { stillElementstoParse = false; }
+                else
+                {
+                    Logger::Log(LOG_INFO, "Made it inside the element while loop!");
+                    sol::table element = Elements[j];
+                    std::string type = element["type"];
+                    
+                    if (type == "TransformElement")
+                    {
+                        double xpos = element["xpos"];
+                        double ypos = element["ypos"];
+                        double xscale = element["xscale"];
+                        double yscale = element["yscale"];
+                        double rotation = element["rotation"];
+                        newExistent.AddElement<TransformElement>(glm::vec2(xpos, ypos), glm::vec2(xscale, yscale), rotation);
+                    }
+
+                    else if (type == "RigidBodyElement")
+                    {
+                        double xspd = element["xspd"];
+                        double yspd = element["yspd"];
+                        newExistent.AddElement<RigidBodyElement>(glm::vec2(xspd, yspd));
+                    }
+
+                    else if (type == "SpriteElement")
+                    {
+                        std::string id = element["assetID"];
+                        double width = element["w"];
+                        double height = element["h"];
+                        newExistent.AddElement<SpriteElement>(id, width, height);
+                    }
+
+                    else if (type == "ColliderElement")
+                    {
+                        double width = element["w"];
+                        double height = element["h"];
+                        newExistent.AddElement<ColliderElement>(glm::vec2(width, height));
+                    }
+                    j++;
+                }
+            }
+            i++;
+        }
+    }
 }
