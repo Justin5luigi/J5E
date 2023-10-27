@@ -11,6 +11,7 @@ Game::Game()
     assetDB = std::make_unique<AssetDataBase>();
     eventHandler = std::make_unique<EventHandler>();
     debugMode = false;
+    luaBindings = LuaBindings();
 }
 
 Game::~Game()
@@ -57,11 +58,13 @@ void Game::Setup()
     universe->AddSystem<CollisionSystem>();
     universe->AddSystem<RenderCollisionSystem>();
     universe->AddSystem<KeyBoardControlSystem>();
+    universe->AddSystem<ScriptSystem>();
     
     LoadAssets("./game.lua");
-
+    luaBindings.SetBindings(lua);
     //subscribing to events
     universe->GetSystem<KeyBoardControlSystem>().ListenToEvents(eventHandler);
+    //universe->GetSystem<ScriptSystem>().Start(lua);
 }
 
 void Game::Run()
@@ -113,6 +116,7 @@ void Game::Update(double delta)
     universe->Update();
     universe->GetSystem<MovementSystem>().Update(delta);
     universe->GetSystem<CollisionSystem>().Update(eventHandler);
+    universe->GetSystem<ScriptSystem>().Update(delta, lua);
     
 }
 
@@ -150,7 +154,7 @@ std::unique_ptr<EventHandler>& Game::GetGameEventHandler() { return eventHandler
 
 void Game::LoadAssets(std::string luaFile)
 {
-    lua.open_libraries(sol::lib::base);
+    lua.open_libraries(sol::lib::base, sol::lib::math);
     sol::load_result script = lua.load_file(luaFile);
     if (!script.valid())
     {
@@ -199,7 +203,6 @@ void Game::LoadAssets(std::string luaFile)
                 if (isElement == sol::nullopt) { stillElementstoParse = false; }
                 else
                 {
-                    Logger::Log(LOG_INFO, "Made it inside the element while loop!");
                     sol::table element = Elements[j];
                     std::string type = element["type"];
                     
@@ -233,6 +236,27 @@ void Game::LoadAssets(std::string luaFile)
                         double width = element["w"];
                         double height = element["h"];
                         newExistent.AddElement<ColliderElement>(glm::vec2(width, height));
+                    }
+
+                    else if (type == "ScriptElement")
+                    {
+                        std::string scriptPath = element["scriptPath"];
+                        //attempting to find scripts update function
+                        sol::load_result result = lua.load_file(scriptPath);
+                        if (!result.valid())
+                        {
+                            Logger::Log(LOG_ERROR, sol::error(result).what());
+                            continue;
+                        }
+                        
+                        lua.script_file(scriptPath);
+                        sol::function updateFunction = lua["Update"];
+                        if (updateFunction.valid()) 
+                        { 
+                            newExistent.AddElement<ScriptElement>(scriptPath, updateFunction);
+                            Logger::Log(LOG_INFO, "Found Update function inside script file " + scriptPath);
+                        }
+                        else { Logger::Log(LOG_ERROR, "Could not find Update function inside script file " + scriptPath); }
                     }
                     j++;
                 }

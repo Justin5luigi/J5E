@@ -10,6 +10,7 @@
 #include "ecs/elements.hpp"
 #include "ecs/systems.hpp"
 #include <sol/sol.hpp>
+#include "luabindings.hpp"
 
 class Game 
 {
@@ -26,6 +27,7 @@ class Game
         double delta;
         uint32_t prevTime, currTime;
         bool debugMode;
+        
 
         //getters
         SDL_Window* GetGameWindow() const;
@@ -33,7 +35,8 @@ class Game
         std::unique_ptr<Universe>& GetGameUniverse();
         std::unique_ptr<AssetDataBase>& GetGameAssetDB();
         std::unique_ptr<EventHandler>& GetGameEventHandler();
-        
+        sol::state lua;
+        LuaBindings luaBindings;
 
     private:
         SDL_Window *window;
@@ -43,8 +46,7 @@ class Game
         std::unique_ptr<Universe> universe;
         std::unique_ptr<AssetDataBase> assetDB;
         std::unique_ptr<EventHandler> eventHandler;
-        sol::state lua;
-        void LoadAssets(std::string luaFile);
-        
+        void LoadAssets(std::string luaFile);  
+        void SetLuaBindings();      
                 
 };

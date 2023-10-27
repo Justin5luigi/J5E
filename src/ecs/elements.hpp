@@ -4,3 +4,4 @@
 #include "Elements/TransformElement.hpp"
 #include "Elements/RigidBody.hpp"
 #include "Elements/ColliderElement.hpp"
+#include "Elements/ScriptElement.hpp"

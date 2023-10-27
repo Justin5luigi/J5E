@@ -8,6 +8,10 @@ Existent::Existent(uint32_t newID) { ID = newID; }
 
 uint32_t Existent::GetID() const { return ID; }
 
+void Existent::SetTag(std::string newTag) { tag = newTag; }
+
+std::string Existent::GetTag() { return tag; }
+
 bool Existent::Equals(Existent other) const { return this->ID == other.GetID(); }
 
 void System::AddExistentToSystem(Existent existent) { existents.push_back(existent); }

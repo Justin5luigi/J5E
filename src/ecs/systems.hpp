@@ -5,3 +5,4 @@
 #include "Systems/CollisionSystem.hpp"
 #include "Systems/RenderCollisionSystem.hpp"
 #include "Systems/KeyboardControlSystem.hpp"
+#include "Systems/ScriptSystem.hpp"

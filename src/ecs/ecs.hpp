@@ -27,9 +27,12 @@ class Existent
         template <typename T> bool ElementExists();
         template <typename T> T& GetElement();
         void Cease();
+        void SetTag(std::string newTag);
+        std::string GetTag();
 
     private:
         uint32_t ID;
+        std::string tag;
         
 };
 
