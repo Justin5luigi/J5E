@@ -2,10 +2,12 @@
 #include <iostream>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
+#include "personal/Vec2.hpp"
 
 Game::Game() 
 {
     Logger::SetLogPath("./logfile.txt");
+    //Logger::SetLoggingType(LOG_FILE_ONLY);
     Logger::Log(LOG_INFO, "Game constructor initialized.");
     universe = std::make_unique<Universe>();
     assetDB = std::make_unique<AssetDataBase>();
@@ -64,7 +66,7 @@ void Game::Setup()
     luaBindings.SetBindings(lua);
     //subscribing to events
     universe->GetSystem<KeyBoardControlSystem>().ListenToEvents(eventHandler);
-    //universe->GetSystem<ScriptSystem>().Start(lua);
+    universe->GetSystem<ScriptSystem>().ListenToEvents(eventHandler);
 }
 
 void Game::Run()
@@ -78,6 +80,7 @@ void Game::Run()
         Input();
         Update(delta);
         Render();
+        universe->GetSystem<KeyBoardControlSystem>().ClearKeyBoardMask();
     }
 }
 
@@ -115,7 +118,7 @@ void Game::Update(double delta)
     //std::cout << "updating..." << std::endl;
     universe->Update();
     universe->GetSystem<MovementSystem>().Update(delta);
-    universe->GetSystem<CollisionSystem>().Update(eventHandler);
+    universe->GetSystem<CollisionSystem>().Update(eventHandler, lua);
     universe->GetSystem<ScriptSystem>().Update(delta, lua);
     
 }
@@ -213,14 +216,14 @@ void Game::LoadAssets(std::string luaFile)
                         double xscale = element["xscale"];
                         double yscale = element["yscale"];
                         double rotation = element["rotation"];
-                        newExistent.AddElement<TransformElement>(glm::vec2(xpos, ypos), glm::vec2(xscale, yscale), rotation);
+                        newExistent.AddElement<TransformElement>(Vec2(xpos, ypos), Vec2(xscale, yscale), rotation);
                     }
 
                     else if (type == "RigidBodyElement")
                     {
                         double xspd = element["xspd"];
                         double yspd = element["yspd"];
-                        newExistent.AddElement<RigidBodyElement>(glm::vec2(xspd, yspd));
+                        newExistent.AddElement<RigidBodyElement>(Vec2(xspd, yspd));
                     }
 
                     else if (type == "SpriteElement")
@@ -235,7 +238,7 @@ void Game::LoadAssets(std::string luaFile)
                     {
                         double width = element["w"];
                         double height = element["h"];
-                        newExistent.AddElement<ColliderElement>(glm::vec2(width, height));
+                        newExistent.AddElement<ColliderElement>(Vec2(width, height));
                     }
 
                     else if (type == "ScriptElement")
@@ -257,6 +260,13 @@ void Game::LoadAssets(std::string luaFile)
                             Logger::Log(LOG_INFO, "Found Update function inside script file " + scriptPath);
                         }
                         else { Logger::Log(LOG_ERROR, "Could not find Update function inside script file " + scriptPath); }
+                        sol::function CollisionFunction = lua["OnCollision"];
+                        if (CollisionFunction.valid()) 
+                        {
+                            Logger::Log(1, "OnCollision function found in script " + scriptPath);
+                            newExistent.GetElement<ScriptElement>().OnCollisionFunc = CollisionFunction;
+                        }
+                        else { Logger::Log(1, "Could not find OnCollision function in script " + scriptPath); }
                     }
                     j++;
                 }

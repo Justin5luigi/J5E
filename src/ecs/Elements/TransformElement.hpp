@@ -1,14 +1,14 @@
 #pragma once
-#include <glm/glm.hpp>
+#include "../../personal/Vec2.hpp"
 #include <string>
 
 struct TransformElement 
 {
-    glm::vec2 position;
-    glm::vec2 scale;
+    Vec2 position;
+    Vec2 scale;
     double rotation;
 
-    TransformElement(glm::vec2 pos = glm::vec2(0, 0), glm::vec2 scale = glm::vec2(1, 1), double rotation = 0)
+    TransformElement(Vec2 pos = Vec2(0, 0), Vec2 scale = Vec2(1, 1), double rotation = 0)
     {
         this->position = pos;
         this->scale = scale;

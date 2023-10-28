@@ -20,8 +20,8 @@ Existents =
             {
                 elements =
                     {
-                        {type = "TransformElement", xpos = 1000, ypos = 10, xscale = 1, yscale = 1, rotation = 0},
-                        {type = "RigidBodyElement", xspd = -30, yspd = 0},
+                        {type = "TransformElement", xpos = 800, ypos = 10, xscale = 1, yscale = 1, rotation = 0},
+                        {type = "RigidBodyElement", xspd = 0, yspd = 0},
                         {type = "SpriteElement", assetID = "test", w = 32, h = 32},
                         {type = "ColliderElement", w = 32, h = 32}
                     }

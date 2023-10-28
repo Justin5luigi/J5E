@@ -23,7 +23,7 @@ class CollisionSystem : public System
             RequireElement<ColliderElement>();
         }
 
-        void Update(std::unique_ptr<EventHandler>& eventHandler)
+        void Update(std::unique_ptr<EventHandler>& eventHandler, sol::state& lua)
         {
             auto existents = GetSystemExistents();
             for (auto i = existents.begin(); i != existents.end(); i++)
@@ -54,9 +54,9 @@ class CollisionSystem : public System
                     };
 
                     if (AABBDoesCollide(aRect, bRect)) 
-                    { 
+                    {  
                         eventHandler->EmitEvent<CollisionEvent>(a, b);
-                        Logger::Log(LOG_INFO, "Collision happened poggers!");
+                        //Logger::Log(LOG_INFO, "Collision happened poggers!");
                     }
                     
                 }
